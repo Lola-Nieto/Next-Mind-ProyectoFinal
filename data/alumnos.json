@@ -1,0 +1,54 @@
+{
+  "alumnos": [
+    {
+      "nombre": "Ana",
+      "apellido": "García",
+      "curso": "4A"
+    },
+    {
+      "nombre": "Juan",
+      "apellido": "Pérez",
+      "curso": "4B"
+    },
+    {
+      "nombre": "María",
+      "apellido": "López",
+      "curso": "4A"
+    },
+    {
+      "nombre": "Carlos",
+      "apellido": "Rodríguez",
+      "curso": "5A"
+    },
+    {
+      "nombre": "Laura",
+      "apellido": "Martínez",
+      "curso": "5B"
+    },
+    {
+      "nombre": "Pedro",
+      "apellido": "González",
+      "curso": "4B"
+    },
+    {
+      "nombre": "Leo",
+      "apellido": "Messi",
+      "curso": "3A"
+    },
+    {
+      "nombre": "Lucía",
+      "apellido": "Fernández",
+      "curso": "5A"
+    },
+    {
+      "nombre": "Sofía",
+      "apellido": "Gómez",
+      "curso": "4B"
+    },
+    {
+      "nombre": "Juan",
+      "apellido": "Rodriguez",
+      "curso": "5B"
+    }
+  ]
+}
