@@ -7,6 +7,10 @@ dotenv.config();
 
 const apiKey = process.env.PERENUAL_API_KEY;
 
+if (!apiKey) {
+  throw new Error("PERENUAL_API_KEY is missing from environment variables!");
+}
+
 // System prompt for the agent
 const systemPrompt = `
 Sos un asistente para ayudar a usuarios a aclarar sus dudas sobre enfermedades de sus plantas.
@@ -37,8 +41,12 @@ const plantDiagnosisTool = {
   name: "diagnosePlantProblem",
   description: "Diagnostica problemas de plantas usando especie y síntomas.",
   parameters: {
-    species: { type: "string", description: "Especie de la planta" },
-    symptoms: { type: "string", description: "Síntomas observados" }
+    type: "object",
+    properties: {
+      species: { type: "string", description: "Especie de la planta" },
+      symptoms: { type: "string", description: "Síntomas observados" }
+    },
+    required: ["species", "symptoms"]
   },
   func: async ({ species, symptoms }) => {
     // Call API and return result
