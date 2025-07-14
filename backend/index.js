@@ -44,6 +44,9 @@ const match = respuesta.match(/<think>([\s\S]*?)<\/think>([\s\S]*)/i);
       console.log('AGENT THOUGHT:', thought);
     }
     // Send only the final answer to the frontend
+    if (typeof finalAnswer !== 'string') {
+      finalAnswer = JSON.stringify(finalAnswer);
+    }
     res.json({ respuesta: finalAnswer });
     
   } catch (error) {
