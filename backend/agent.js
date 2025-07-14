@@ -24,16 +24,46 @@ const ollamaLLM = new Ollama({
   timeout: 2 * 60 * 1000,
 });
 
-// 1. Function to call your external API - now receives extracted info
+// Helper function: check if species matches host(s)
+function hostMatches(species, hostArr, descriptions) {
+  if (!hostArr || !species) return false;
+  return (hostArr.some(h => h.toLowerCase().includes(species.toLowerCase()) ) || descriptions.some(descObj => descObj.description.toLowerCase().includes(species.toLowerCase()) ) 
+  ) 
+}
+
+// Helper function: check if symptoms appear in any description
+function symptomsMatch(symptoms, descriptions) {
+  if (!descriptions || !symptoms) return false;
+  const symptomsLower = symptoms.toLowerCase();
+  return descriptions.some(descObj =>
+    descObj.description.toLowerCase().includes(symptomsLower)
+  );
+}
+
+// Main function to call API and match
 async function callPlantApi({ species, symptoms }) {
-  const url = `https://perenual.com/api/pest-disease-list?key=${apiKey}&species=${encodeURIComponent(species)}&symptoms=${encodeURIComponent(symptoms)}`;
+  const url = `https://perenual.com/api/pest-disease-list?key=${apiKey}`;
   const response = await axios.get(url);
-  // Adapt parsing based on actual API response:
+
   if (!response.data || !response.data.data || response.data.data.length === 0) {
     throw new Error("No se encontró información para tu consulta.");
   }
-  const result = response.data.data[0]; // Or adapt as needed
-  return result;
+
+  // Find best match
+  const matches = response.data.data.filter(disease =>
+    hostMatches(species, disease.host, disease.description) &&
+    symptomsMatch(symptoms, disease.description)
+  );
+
+  // If no exact match, fallback: match only species
+  const bestMatch = matches[0] ||
+    response.data.data.find(disease => hostMatches(species, disease.host));
+    //Se fija solo en las especies --> daría otro tipo de rta (hay q contemplar eso --> 
+    //tendría q decir no se encuentran los sintomas, pero una lechuga puede tener tal, tal y tal otra enfermedades, podes investigar más sobre ellos) 
+
+  if (!bestMatch) {
+    throw new Error("No se encontró enfermedad coincidente.");
+  }
 }
 
 // 2. The 'tool' to extract info and call the API
@@ -51,9 +81,16 @@ const plantDiagnosisTool = {
   func: async ({ species, symptoms }) => {
     // Call API and return result
     const apiResult = await callPlantApi({ species, symptoms });
-    // Format for LLM
-    return `Causa: ${apiResult.cause}\nSolución: ${apiResult.solution}\nRecomendación: ${apiResult.recommendation || ""}`;
-  }
+    // Format output for LLM response
+    let descText = apiResult.description.map(
+      d => `**${d.subtitle}**\n${d.description}`
+    ).join("\n\n");
+    let solutionText = apiResult.solution.map(
+      s => `**${s.subtitle}**\n${s.description}`
+    ).join("\n\n");
+
+
+    return `Enfermedad: ${apiResult.common_name}\n\n${descText}\n\nSoluciones:\n${solutionText}`;  }
 };
 
 // 3. Configure your agent
