@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import ChatInput from './components/ChatInput';
 import MessageList from './components/MessageList';
-import axios from 'axios';
+import { sendMessage } from './api';
 
 const App = () => {
     const [messages, setMessages] = useState([]);
@@ -14,8 +14,8 @@ const App = () => {
         setLoading(true);
 
         try {
-            const response = await axios.post('http://localhost:3001/api/chat', { mensaje: question });
-            const botMessage = { role: 'bot', content: response.data.respuesta.data?.result || response.data.respuesta };
+            const respuesta = await sendMessage(question);
+            const botMessage = { role: 'bot', content: respuesta };
             setMessages((prevMessages) => [...prevMessages, botMessage]);
         } catch (error) {
             setMessages((prevMessages) => [

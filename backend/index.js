@@ -19,6 +19,10 @@ app.get("/", (req, res) => {
 app.post("/api/chat", async (req, res) => {
   const { mensaje } = req.body;
 
+  if (typeof mensaje !== "string" || !mensaje.trim()) {
+    return res.status(400).json({ error: "El mensaje es requerido y debe ser un texto." });
+  }
+
   console.log("Mensaje recibido:", mensaje);
 
   // Use only the memory as context for the agent
@@ -41,8 +45,8 @@ app.post("/api/chat", async (req, res) => {
     res.json({ respuesta: finalAnswer });
     
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Error al procesar la solicitud" });
+    console.error("Error en el agente:", error);
+    res.status(500).json({ error: "Error interno del servidor. Intenta nuevamente más tarde." });
   }
 });
 

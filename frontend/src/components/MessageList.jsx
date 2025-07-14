@@ -1,8 +1,14 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import './MessageList.css';
 
 
 const MessageList = ({ messages, loading }) => {
+    const endRef = useRef(null);
+
+    useEffect(() => {
+        endRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages, loading]);
+
     return (
         <div className="message-list">
             {messages.map((msg, index) => (
@@ -16,6 +22,7 @@ const MessageList = ({ messages, loading }) => {
                     <span style={{ marginLeft: 8, color: '#888' }}>El asistente está escribiendo...</span>
                 </div>
             )}
+            <div ref={endRef} />
         </div>
     );
 };
