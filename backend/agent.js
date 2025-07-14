@@ -24,20 +24,19 @@ const ollamaLLM = new Ollama({
   timeout: 2 * 60 * 1000,
 });
 
-// Helper function: check if species matches host(s)
-function hostMatches(species, hostArr, descriptions) {
-  if (!hostArr || !species) return false;
-  return (hostArr.some(h => h.toLowerCase().includes(species.toLowerCase()) ) || descriptions.some(descObj => descObj.description.toLowerCase().includes(species.toLowerCase()) ) 
-  ) 
-}
-
-// Helper function: check if symptoms appear in any description
-function symptomsMatch(symptoms, descriptions) {
-  if (!descriptions || !symptoms) return false;
+// Helper: combine species and symptoms matching in descriptions
+function combinedMatch(species, symptoms, hostArr, descriptions) {
+  if (!species || !symptoms || !descriptions) return false;
+  const speciesLower = species.toLowerCase();
   const symptomsLower = symptoms.toLowerCase();
-  return descriptions.some(descObj =>
-    descObj.description.toLowerCase().includes(symptomsLower)
-  );
+
+  // Check if species matches host or description AND symptoms appear in description (in the same disease)
+  const speciesInHost = hostArr && hostArr.some(h => h.toLowerCase().includes(speciesLower));
+  const speciesInDesc = descriptions.some(descObj => descObj.description.toLowerCase().includes(speciesLower));
+  const symptomsInDesc = descriptions.some(descObj => descObj.description.toLowerCase().includes(symptomsLower));
+
+  // Only if both species match (host or desc) AND symptoms appear in description
+  return (speciesInHost || speciesInDesc) && symptomsInDesc;
 }
 
 // Main function to call API and match
@@ -45,26 +44,29 @@ async function callPlantApi({ species, symptoms }) {
   console.log('[callPlantApi] species:', species, '| symptoms:', symptoms);
   const url = `https://perenual.com/api/pest-disease-list?key=${apiKey}`;
   const response = await axios.get(url);
-  console.log('[callPlantApi] API response:', JSON.stringify(response.data, null, 2));
+  //console.log('[callPlantApi] API response:', JSON.stringify(response.data, null, 2));
 
   if (!response.data || !response.data.data || response.data.data.length === 0) {
     console.error('[callPlantApi] No se encontró información para tu consulta.');
     throw new Error("No se encontró información para tu consulta.");
   }
 
-  // Find best match
+  // Find best match using combined condition
   const matches = response.data.data.filter(disease =>
-    hostMatches(species, disease.host, disease.description) &&
-    symptomsMatch(symptoms, disease.description)
+    combinedMatch(species, symptoms, disease.host, disease.description)
   );
-  console.log('[callPlantApi] matches:', matches);
+  console.log('[callPlantApi] matches:', matches.length);
 
   // If no exact match, fallback: match only species
   const bestMatch = matches[0] ||
-    response.data.data.find(disease => hostMatches(species, disease.host));
-    //Se fija solo en las especies --> daría otro tipo de rta (hay q contemplar eso --> 
-    //tendría q decir no se encuentran los sintomas, pero una lechuga puede tener tal, tal y tal otra enfermedades, podes investigar más sobre ellos) 
-    console.log('[callPlantApi] bestMatch:', bestMatch);
+    response.data.data.find(disease => {
+      const speciesLower = species?.toLowerCase();
+      return (disease.host && disease.host.some(h => h.toLowerCase().includes(speciesLower))) ||
+             (disease.description && disease.description.some(descObj => descObj.description.toLowerCase().includes(speciesLower)));
+    });
+  //Se fija solo en las especies --> daría otro tipo de rta (hay q contemplar eso --> 
+  //tendría q decir no se encuentran los sintomas, pero una lechuga puede tener tal, tal y tal otra enfermedades, podes investigar más sobre ellos) 
+  console.log('[callPlantApi] bestMatch:', bestMatch);
 
   if (!bestMatch) {
     console.error('[callPlantApi] No se encontró enfermedad coincidente.');
@@ -98,7 +100,8 @@ const plantDiagnosisTool = tool({
       s => `**${s.subtitle}**\n${s.description}`
     ).join("\n\n");
 
-    return `Enfermedad: ${apiResult.common_name}\n\n${descText}\n\nSoluciones:\n${solutionText}`;  }
+    return `Enfermedad: ${apiResult.common_name}\n\n${descText}\n\nSoluciones:\n${solutionText}`;
+  }
 });
 
 // 3. Configure your agent
