@@ -42,10 +42,13 @@ function symptomsMatch(symptoms, descriptions) {
 
 // Main function to call API and match
 async function callPlantApi({ species, symptoms }) {
+  console.log('[callPlantApi] species:', species, '| symptoms:', symptoms);
   const url = `https://perenual.com/api/pest-disease-list?key=${apiKey}`;
   const response = await axios.get(url);
+  console.log('[callPlantApi] API response:', JSON.stringify(response.data, null, 2));
 
   if (!response.data || !response.data.data || response.data.data.length === 0) {
+    console.error('[callPlantApi] No se encontró información para tu consulta.');
     throw new Error("No se encontró información para tu consulta.");
   }
 
@@ -54,16 +57,20 @@ async function callPlantApi({ species, symptoms }) {
     hostMatches(species, disease.host, disease.description) &&
     symptomsMatch(symptoms, disease.description)
   );
+  console.log('[callPlantApi] matches:', matches);
 
   // If no exact match, fallback: match only species
   const bestMatch = matches[0] ||
     response.data.data.find(disease => hostMatches(species, disease.host));
     //Se fija solo en las especies --> daría otro tipo de rta (hay q contemplar eso --> 
     //tendría q decir no se encuentran los sintomas, pero una lechuga puede tener tal, tal y tal otra enfermedades, podes investigar más sobre ellos) 
+    console.log('[callPlantApi] bestMatch:', bestMatch);
 
   if (!bestMatch) {
+    console.error('[callPlantApi] No se encontró enfermedad coincidente.');
     throw new Error("No se encontró enfermedad coincidente.");
   }
+  return bestMatch;
 }
 
 // 2. The 'tool' to extract info and call the API
@@ -79,8 +86,10 @@ const plantDiagnosisTool = {
     required: ["species", "symptoms"]
   },
   func: async ({ species, symptoms }) => {
+    console.log('[plantDiagnosisTool.func] species:', species, '| symptoms:', symptoms);
     // Call API and return result
     const apiResult = await callPlantApi({ species, symptoms });
+    console.log('[plantDiagnosisTool.func] apiResult:', apiResult);
     // Format output for LLM response
     let descText = apiResult.description.map(
       d => `**${d.subtitle}**\n${d.description}`
@@ -88,7 +97,6 @@ const plantDiagnosisTool = {
     let solutionText = apiResult.solution.map(
       s => `**${s.subtitle}**\n${s.description}`
     ).join("\n\n");
-
 
     return `Enfermedad: ${apiResult.common_name}\n\n${descText}\n\nSoluciones:\n${solutionText}`;  }
 };
