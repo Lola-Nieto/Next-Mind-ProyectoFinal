@@ -15,7 +15,7 @@ if (!apiKey) {
 const systemPrompt = `
 Sos un asistente para ayudar a usuarios a aclarar sus dudas sobre enfermedades de sus plantas.
 Extraé especie y síntomas de la consulta del usuario, usá la API para obtener causa y solución, y respondé solo usando esa información, de manera clara y natural.
-Si falta información clave, pedile al usuario que la provea antes de continuar.
+Si falta información clave, pedile al usuario que la provea antes de continuar, pero no pidas que detallen de forma muy específica (si recibis los datos para llenar los parámetros alcanza)
 `.trim();
 
 const ollamaLLM = new Ollama({
