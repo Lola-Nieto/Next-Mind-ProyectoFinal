@@ -1,4 +1,4 @@
-import { agent } from "llamaindex";
+import { tool, agent } from "llamaindex";
 import { Ollama } from "@llamaindex/ollama";
 import axios from "axios";
 import dotenv from "dotenv";
@@ -74,7 +74,7 @@ async function callPlantApi({ species, symptoms }) {
 }
 
 // 2. The 'tool' to extract info and call the API
-const plantDiagnosisTool = {
+const plantDiagnosisTool = tool({
   name: "diagnosePlantProblem",
   description: "Diagnostica problemas de plantas usando especie y síntomas.",
   parameters: {
@@ -85,7 +85,7 @@ const plantDiagnosisTool = {
     },
     required: ["species", "symptoms"]
   },
-  func: async ({ species, symptoms }) => {
+  execute: async ({ species, symptoms }) => {
     console.log('[plantDiagnosisTool.func] species:', species, '| symptoms:', symptoms);
     // Call API and return result
     const apiResult = await callPlantApi({ species, symptoms });
@@ -99,7 +99,7 @@ const plantDiagnosisTool = {
     ).join("\n\n");
 
     return `Enfermedad: ${apiResult.common_name}\n\n${descText}\n\nSoluciones:\n${solutionText}`;  }
-};
+});
 
 // 3. Configure your agent
 export const elAgente = agent({

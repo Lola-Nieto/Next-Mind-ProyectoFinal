@@ -31,11 +31,13 @@ app.post("/api/chat", async (req, res) => {
 
     let thought = '';
     let finalAnswer = respuesta;
-    const match = respuesta.match(/<think>([\s\S]*?)<\/think>([\s\S]*)/i);
+    /*
+const match = respuesta.match(/<think>([\s\S]*?)<\/think>([\s\S]*)/i);
     if (match) {
       thought = match[1].trim();
       finalAnswer = match[2].trim();
     }
+    */
 
     // Show verbose/thought in backend console
     if (thought) {
