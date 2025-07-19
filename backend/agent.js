@@ -39,14 +39,24 @@ function combinedMatch(species, symptoms, hostArr, descriptions) {
   return (speciesInHost || speciesInDesc) && symptomsInDesc;
 }
 
+
 // Main function to call API and match
 async function callPlantApi({ species, symptoms }) {
   console.log('[callPlantApi] species:', species, '| symptoms:', symptoms);
   const url = `https://perenual.com/api/pest-disease-list?key=${apiKey}`;
   const response = await axios.get(url);
-  //console.log('[callPlantApi] API response:', JSON.stringify(response.data, null, 2));
+  const pages = response.data.total_pages;
+  response = response.data.data;
 
-  if (!response.data || !response.data.data || response.data.data.length === 0) {
+  //Para traer la info de todas las páginas
+  if(pages > 1) {
+    for (let i = 2; i <= pages; i++) {
+      const pageResponse = await axios.get(`${url}&page=${i}`);
+      response.push(...pageResponse.data.data);
+    }
+  }
+
+  if (!response || response.length === 0) {
     console.error('[callPlantApi] No se encontró información para tu consulta.');
     throw new Error("No se encontró información para tu consulta.");
   }
@@ -75,22 +85,22 @@ async function callPlantApi({ species, symptoms }) {
   return bestMatch;
 }
 
-// 2. The 'tool' to extract info and call the API
+// Main function to call API and match
 const plantDiagnosisTool = tool({
   name: "diagnosePlantProblem",
-  description: "Diagnostica problemas de plantas usando especie y síntomas.",
+  description: "Diagnostica problemas de plantas usando el nombre genérico y síntomas.",
   parameters: {
     type: "object",
     properties: {
-      species: { type: "string", description: "Especie de la planta" },
+      species: { type: "string", description: "Nombre usado comunmente de la planta" },
       symptoms: { type: "string", description: "Síntomas observados" }
     },
-    required: ["species", "symptoms"]
+    required: ["species", "symptoms"] 
   },
-  execute: async ({ species, symptoms }) => {
+  execute: async ({ species, symptoms }) => { 
     console.log('[plantDiagnosisTool.func] species:', species, '| symptoms:', symptoms);
     // Call API and return result
-    const apiResult = await callPlantApi({ species, symptoms });
+    const apiResult = await callPlantApi({ species, symptoms }); 
     console.log('[plantDiagnosisTool.func] apiResult:', apiResult);
     // Format output for LLM response
     let descText = apiResult.description.map(
