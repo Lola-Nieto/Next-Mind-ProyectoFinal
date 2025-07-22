@@ -1,13 +1,5 @@
-DUDAS
 
-Conceptual
-La API sirve apra listar enfermedades comunes en plantas (no en ese tipo de planta) --> preg: cómo hago para enviar sintomas que usuario lista y en base a eso construir la rta --> llm DEBERia buscar entre sintomas de todas las enfermedades y hacer un match para a partir de eso proponer soluciones (sin tener la certeza de que es una enfermedad qeu ataca a ese tipo de plantas)
-
-
-Tendría que buscar entre lso host no solo si dice lechuga, sino si dice hortalizas tmb
-
-
-PROBLEMA
+PROBLEMAS
 But the system returned an error about a self-signed certificate. --> en el think
 
 
@@ -18,6 +10,9 @@ But the system returned an error about a self-signed certificate. --> en el thin
 (node:8988) Warning: Setting the NODE_TLS_REJECT_UNAUTHORIZED environment variable to '0' makes TLS connections and HTTPS requests insecure by disabling certificate verification.
 (Use `node --trace-warnings ...` to show where the warning was created)
 
+Traduce síntomas pero no el nombre (el agente antes de llamar a API)
+
+[callPlantApi] response length: 30 --> solo toma 1era pag, deberian ser 96
 
 
 # Next-Mind Proyecto Final

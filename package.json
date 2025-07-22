@@ -18,6 +18,7 @@
     "dotenv": "^16.5.0",
     "http-status-codes": "^2.3.0",
     "llamaindex": "^0.10.6",
+    "natural": "^8.1.0",
     "nodemon": "^3.1.10",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
