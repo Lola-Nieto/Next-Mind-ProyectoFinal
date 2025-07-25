@@ -1,19 +1,9 @@
 
 PROBLEMAS
-But the system returned an error about a self-signed certificate. --> en el think
 
-
-{"data":{"result":"<think>\nOkay, the user mentioned they have a tomato plant with brown leaves and weak roots, and the plant is fallen. They need help diagnosing the problem. Let me check the tools available. There's a function called diagnosePlantProblem that requires species and symptoms. The user provided species as tomato and symptoms as brown leaves and weak roots. But the system returned an error about a self-signed certificate. Wait, that's not related to the plant diagnosis. Maybe the tool call was invalid because the parameters were missing something? The user didn't specify the species correctly? Oh, the species is tomato, but maybe the symptoms need more details. The error might be a system issue, not related to the actual diagnosis. I should prompt the user to provide more details, like the exact species and more symptoms, to ensure accurate diagnosis. Let me ask them to specify the species and additional symptoms.\n</think>\n\nLa planta es de tomate y presenta síntomas como hojas marrones y raíces debilitadas. Para una diagnóstico preciso, por favor especifique:\n1. Especie exacta de la planta (ej: \"Solanum lycopersicum\" o \"tomate común\")\n2. Otros síntomas observados (ej: \"moho en la raíz\", \"húmedo en el suelo\", \"dolor en la parte superior\")\n3. Condición del suelo (ej: \"desechado\", \"húmedo\", \"lodozo\")\n\nEsta información ayudará a identificar la causa más probable."},
-
-
-"displayName":"StopEvent"}
-(node:8988) Warning: Setting the NODE_TLS_REJECT_UNAUTHORIZED environment variable to '0' makes TLS connections and HTTPS requests insecure by disabling certificate verification.
-(Use `node --trace-warnings ...` to show where the warning was created)
-
-Traduce síntomas pero no el nombre (el agente antes de llamar a API)
-
-[callPlantApi] response length: 30 --> solo toma 1era pag, deberian ser 96
-
+- Traduce morrón como Morrison, marrow... a veces lo confunde con el tomate
+- No funciona la función que traduce al español la rta
+- No traduce zanahoria a inglés
 
 # Next-Mind Proyecto Final
 
