@@ -3,7 +3,10 @@ PROBLEMAS
 
 - Traduce morrón como Morrison, marrow... a veces lo confunde con el tomate
 - No funciona la función que traduce al español la rta
-- No traduce zanahoria a inglés
+- No traduce algunas especies a inglés
+
+FALTA
+- Que rta no salga con formato {"data":{"result":" TEXTO  "},"displayName":"StopEvent"}
 
 # Next-Mind Proyecto Final
 
