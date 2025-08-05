@@ -163,7 +163,7 @@ export const elAgente = agent({
   systemPrompt,
 });
 
-/*
+
 const SPECIES_LEX = { 
   frutilla: "strawberry", 
   tomate: "tomato", 
@@ -243,4 +243,3 @@ export async function chatWithDiagnosis(utterance) {
     return response;
   }
 
-*/
