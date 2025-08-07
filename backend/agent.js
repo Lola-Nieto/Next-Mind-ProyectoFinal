@@ -15,19 +15,21 @@ if (!apiKey) {
 const ollamaLLM = new Ollama({
   model: "mistral:7b",
   temperature: 0.3,
-  timeout: 2 * 60 * 1000,
+  timeout: (180 * 1000),
 });
 
 
 // System prompt for the agent
 const systemPrompt = `
 Sos un asistente para diagnosticar enfermedades de plantas.
-Debes:
-- Extraer nombre común de la planta y síntomas del usuario.
-- Si ya podés detectar ambos, llamá al tool "diagnosePlantProblem" directamente.
-- No pidas confirmaciones innecesarias si los datos ya están presentes.
-- Devolvé solo la información del tool.
-- La API está en inglés: traduce especie y síntomas antes de usarlos si es necesario.
+
+Tu tarea es:
+- Detectar la especie (nombre común) de la planta y sus síntomas.
+- Si ambos están presentes, llamá al tool "diagnosePlantProblem" directamente.
+- Traducí la especie y síntomas al inglés antes de invocar el tool (la API está en inglés).
+- No des explicaciones ni sugerencias por tu cuenta. Devolvé solo el resultado del tool.
+- Si el tool no devuelve resultados, informá que no se encontró una enfermedad coincidente. No inventes una respuesta.
+
 `.trim();
 
 
@@ -106,6 +108,9 @@ async function callPlantApi({ species, symptoms }) {
 
   const ranked = getRankedMatches(species, symptoms, allData);
   console.log('[callPlantApi] ranked count:', ranked.length);
+  ranked.forEach(element => {
+    console.log('[callPlantApi] ranked element:', element.id || 'no id', '| score:', element.score);
+  });
 
   if (!ranked.length) return { notFound: true };
   return { bestMatch: ranked[0] };
@@ -123,9 +128,15 @@ const plantDiagnosisTool = tool({
     required: ["species", "symptoms"]
   },
   execute: async ({ species, symptoms }) => {
+  const normalizedSpecies = normalizeText(species);
+  const mapped = SPECIES_LEX[normalizedSpecies];
+  const usedSpecies = mapped || species; // usar traducción si hay
+
+  console.log("[plantDiagnosisTool.func] especie traducida:", usedSpecies);
+
   console.log('[plantDiagnosisTool.func] species:', species, '| symptoms:', symptoms);
   try {
-    const { bestMatch, notFound } = await callPlantApi({ species, symptoms });
+    const { bestMatch, notFound } = await callPlantApi({ species: usedSpecies, symptoms: normalizeText(symptoms) });
     if (notFound) {
       return "No se encontró ninguna enfermedad que coincida con tu consulta.";
     }
@@ -170,6 +181,9 @@ const SPECIES_LEX = {
   lechuga: "lettuce",
   pimiento: "pepper",
   morron: "pepper",
+  morrones: "peppers",
+  ají: "chili",
+  ajies: "chilis",
   berenjena: "eggplant",
   zapallo: "squash",
   calabaza: "squash",

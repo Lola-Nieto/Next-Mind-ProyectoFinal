@@ -7,6 +7,7 @@ PROBLEMAS
 
 FALTA
 - Que rta no salga con formato {"data":{"result":" TEXTO  "},"displayName":"StopEvent"}
+timed out after 60 seconds
 
 # Next-Mind Proyecto Final
 
