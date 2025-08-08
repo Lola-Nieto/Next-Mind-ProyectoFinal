@@ -26,11 +26,20 @@ Sos un asistente para diagnosticar enfermedades de plantas.
 Tu tarea es:
 - Detectar la especie (nombre común) de la planta y sus síntomas.
 - Si ambos están presentes, llamá al tool "diagnosePlantProblem" directamente.
-- Traducí la especie y síntomas al inglés antes de invocar el tool (la API está en inglés).
 - No des explicaciones ni sugerencias por tu cuenta. Devolvé solo el resultado del tool.
 - Si el tool no devuelve resultados, informá que no se encontró una enfermedad coincidente. No inventes una respuesta.
 
 `.trim();
+
+
+
+
+function normalizeText(str) {
+  return str
+    .toLowerCase()
+    .normalize("NFD")           // separa acentos
+    .replace(/[\u0300-\u036f]/g, ""); // quita acentos
+}
 
 
 function stemWords(text) {
@@ -78,6 +87,18 @@ function getRankedMatches(species, symptoms, allData) {
   return ranked;
 }
 
+async function traducirTexto(texto) {
+  try {
+    const res = await ollamaLLM.complete({
+      prompt: `Traduce al inglés el siguiente texto manteniendo el sentido:\n\n${texto}`,
+      temperature: 0.2
+    });
+    return (res?.text || texto).trim();
+  } catch (err) {
+    console.error("[traducirTexto] Error:", err.message);
+    return texto; // fallback si falla
+  }
+}
 
 async function callPlantApi({ species, symptoms }) {
   console.log('[callPlantApi] species:', species, '| symptoms:', symptoms);
@@ -129,14 +150,15 @@ const plantDiagnosisTool = tool({
   },
   execute: async ({ species, symptoms }) => {
   const normalizedSpecies = normalizeText(species);
-  const mapped = SPECIES_LEX[normalizedSpecies];
-  const usedSpecies = mapped || species; // usar traducción si hay
+  let speciesEnglish =  await traducirEspecie(normalizedSpecies);
 
-  console.log("[plantDiagnosisTool.func] especie traducida:", usedSpecies);
+  const symptomsEnglish = await traducirTexto(symptoms);
 
-  console.log('[plantDiagnosisTool.func] species:', species, '| symptoms:', symptoms);
+    console.log("[plantDiagnosisTool.func] especie traducida:", speciesEnglish);
+    console.log("[plantDiagnosisTool.func] sintomas traducidos:", symptomsEnglish);
   try {
-    const { bestMatch, notFound } = await callPlantApi({ species: usedSpecies, symptoms: normalizeText(symptoms) });
+    const { bestMatch, notFound } = await callPlantApi({ species: speciesEnglish, symptoms: normalizeText(symptomsEnglish) });
+    
     if (notFound) {
       return "No se encontró ninguna enfermedad que coincida con tu consulta.";
     }
@@ -152,26 +174,16 @@ const plantDiagnosisTool = tool({
     const rawResponse = `**Más probable:** ${bestMatch.common_name}\n\n${descText}\n\n**Soluciones:**\n${solutionText}`;
 
     // Traducir al español (si la info está en inglés)
-    const translated = await ollamaLLM.complete({
-      prompt: `Traduce al español el siguiente texto manteniendo el formato:\n\n${rawResponse}`,
-      temperature: 0.2
-    });
+    const translated = await traducirTexto(rawResponse);
 
+    return ( translated || '').trim();
 
-    return ( translated?.text || '').trim();
   } catch (error) {
     console.error('[plantDiagnosisTool.func] Error calling API:', error.message);
     return "No se pudo conectar con la API de enfermedades de plantas.";
   }
   }
 
-});
-
-export const elAgente = agent({
-  tools: [plantDiagnosisTool],
-  llm: ollamaLLM,
-  verbose: true,
-  systemPrompt,
 });
 
 
@@ -220,12 +232,14 @@ const SPECIES_LEX = {
 
 };
 
-function normalizeText(str) {
-  return str
-    .toLowerCase()
-    .normalize("NFD")           // separa acentos
-    .replace(/[\u0300-\u036f]/g, ""); // quita acentos
-}
+
+export const elAgente = agent({
+  tools: [plantDiagnosisTool],
+  llm: ollamaLLM,
+  verbose: true,
+  systemPrompt,
+});
+
 
 function extractParams(utterance) {
   const normalized = normalizeText(utterance);
@@ -245,8 +259,10 @@ function extractParams(utterance) {
   return { species, symptoms };
 }
 
+
 export async function chatWithDiagnosis(utterance) {
-  const { species, symptoms } = extractParams(utterance);
+  //const { species, symptoms } = extractParams(utterance);
+
   let response;
   if (species) {
     response = await plantDiagnosisTool.execute({ species, symptoms });
