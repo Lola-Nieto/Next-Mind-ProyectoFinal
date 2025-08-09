@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import './MessageList.css';
 
-
 const MessageList = ({ messages, loading }) => {
     const endRef = useRef(null);
 
@@ -13,10 +12,15 @@ const MessageList = ({ messages, loading }) => {
         <div className="message-list">
             {messages.map((msg, index) => (
                 <div key={index} className={`message ${msg.role === 'user' ? 'user-message' : 'bot-message'}`}>
-                <p>{msg.content}</p>
-            </div>
+                    {msg.content.split('\n').map((line, i) => (
+                        <React.Fragment key={i}>
+                            {line}
+                            <br />
+                        </React.Fragment>
+                    ))}
+                </div>
             ))}
-             {loading && (
+            {loading && (
                 <div className='spinner-container'>
                     <div className="spinner"></div>
                     <span style={{ marginLeft: 8, color: '#888' }}>El asistente está escribiendo...</span>

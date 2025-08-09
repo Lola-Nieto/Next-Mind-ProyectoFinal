@@ -137,6 +137,24 @@ async function callPlantApi({ species, symptoms }) {
   return { bestMatch: ranked[0] };
 }
 
+function translateSpecies(word) {
+  const normalized = normalizeText(word);
+  let foundKey = null;
+
+  for (const k of Object.keys(SPECIES_LEX)) {
+    const normalizedKey = normalizeText(k);
+    if (normalized.includes(normalizedKey)) {
+      foundKey = k;
+      break;
+    }
+  }
+
+  const wordTranslation = foundKey ? SPECIES_LEX[foundKey] : null;
+
+  return { wordTranslation };
+}
+
+
 const plantDiagnosisTool = tool({
   name: "diagnosePlantProblem",
   description: "Diagnostica problemas de plantas usando el nombre genérico y síntomas.",
@@ -149,8 +167,9 @@ const plantDiagnosisTool = tool({
     required: ["species", "symptoms"]
   },
   execute: async ({ species, symptoms }) => {
-  const normalizedSpecies = normalizeText(species);
-  let speciesEnglish =  await traducirEspecie(normalizedSpecies);
+
+  let {wordTranslation: speciesEnglish}  =  await translateSpecies(species);
+  if (!speciesEnglish) speciesEnglish = species;
 
   const symptomsEnglish = await traducirTexto(symptoms);
 
@@ -173,10 +192,11 @@ const plantDiagnosisTool = tool({
 
     const rawResponse = `**Más probable:** ${bestMatch.common_name}\n\n${descText}\n\n**Soluciones:**\n${solutionText}`;
 
-    // Traducir al español (si la info está en inglés)
+    /*
+    // Traducir al español (si la info está en inglés) --> Lo que deberia hacer vs lo q hace: traduce a ingles
     const translated = await traducirTexto(rawResponse);
-
-    return ( translated || '').trim();
+    */
+    return ( rawResponse || '').trim();
 
   } catch (error) {
     console.error('[plantDiagnosisTool.func] Error calling API:', error.message);
@@ -229,6 +249,8 @@ const SPECIES_LEX = {
   repollo: "cabbage",
   berenjena: "eggplant",
   espinaca: "spinach",  
+  alcachofa: "artichoke", 
+  alcaucil: "artichoke"
 
 };
 
@@ -239,26 +261,6 @@ export const elAgente = agent({
   verbose: true,
   systemPrompt,
 });
-
-
-function extractParams(utterance) {
-  const normalized = normalizeText(utterance);
-  let foundKey = null;
-
-  for (const k of Object.keys(SPECIES_LEX)) {
-    const normalizedKey = normalizeText(k);
-    if (normalized.includes(normalizedKey)) {
-      foundKey = k;
-      break;
-    }
-  }
-
-  const species = foundKey ? SPECIES_LEX[foundKey] : null;
-  const symptoms = utterance; // dejamos el texto original
-
-  return { species, symptoms };
-}
-
 
 export async function chatWithDiagnosis(utterance) {
   //const { species, symptoms } = extractParams(utterance);
