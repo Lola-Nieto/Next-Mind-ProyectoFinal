@@ -12,11 +12,11 @@ const MessageList = ({ messages, loading }) => {
         <div className="message-list">
             {messages.map((msg, index) => (
                 <div key={index} className={`message ${msg.role === 'user' ? 'user-message' : 'bot-message'}`}>
-                    {msg.content.split('\n').map((line, i) => (
-                        <React.Fragment key={i}>
-                            {line}
-                            <br />
-                        </React.Fragment>
+                    {msg.content.replace(/\\n/g, '\n').split('\n').map((line, i) => (
+                    <React.Fragment key={i}>
+                        {line}
+                        <br />
+                    </React.Fragment>
                     ))}
                 </div>
             ))}

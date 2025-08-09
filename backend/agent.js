@@ -11,6 +11,8 @@ if (!apiKey) {
   throw new Error("PERENUAL_API_KEY is missing from environment variables!");
 }
 
+let perenualCache = null;
+
 
 const ollamaLLM = new Ollama({
   model: "mistral:7b",
@@ -87,10 +89,10 @@ function getRankedMatches(species, symptoms, allData) {
   return ranked;
 }
 
-async function traducirTexto(texto) {
+async function traducirTexto(texto, idiomaDestino) {
   try {
     const res = await ollamaLLM.complete({
-      prompt: `Traduce al inglés el siguiente texto manteniendo el sentido:\n\n${texto}`,
+      prompt: `Traduce al ${idiomaDestino} el siguiente texto manteniendo el sentido:\n\n${texto}`,
       temperature: 0.2
     });
     return (res?.text || texto).trim();
@@ -101,30 +103,37 @@ async function traducirTexto(texto) {
 }
 
 async function callPlantApi({ species, symptoms }) {
-  console.log('[callPlantApi] species:', species, '| symptoms:', symptoms);
-  const base = `https://perenual.com/api/pest-disease-list?key=${apiKey}`;
-  let response;
-  try {
-    response = await axios.get(base);
-  } catch (error) {
-    console.error('[callPlantApi] API request failed:', error.message);
-    throw new Error('No se pudo conectar con la API de enfermedades de plantas.');
-  }
-
-  let allData = response.data.data;
-  const pages = response.data.last_page || 1;
-  console.log('[callPlantApi] total pages:', pages);
-
-  // Traer todas las páginas
-  for (let i = 2; i <= pages; i++) {
+  let allData;
+  if (perenualCache) {
+    console.log('[callPlantApi] Usando datos en caché');
+    allData = perenualCache;
+    
+  }else{
+    console.log('[callPlantApi] species:', species, '| symptoms:', symptoms);
+    const base = `https://perenual.com/api/pest-disease-list?key=${apiKey}`;
+    let response;
     try {
-      const pageResponse = await axios.get(`${base}&page=${i}`);
-      allData.push(...pageResponse.data.data);
+      response = await axios.get(base);
     } catch (error) {
-      console.error(`[callPlantApi] API request for page ${i} failed:`, error.message);
+      console.error('[callPlantApi] API request failed:', error.message);
+      throw new Error('No se pudo conectar con la API de enfermedades de plantas.');
     }
-  }
 
+    allData = response.data.data;
+    const pages = response.data.last_page || 1;
+    console.log('[callPlantApi] total pages:', pages);
+
+    // Traer todas las páginas
+    for (let i = 2; i <= pages; i++) {
+      try {
+        const pageResponse = await axios.get(`${base}&page=${i}`);
+        allData.push(...pageResponse.data.data);
+      } catch (error) {
+        console.error(`[callPlantApi] API request for page ${i} failed:`, error.message);
+      }
+    }
+    perenualCache = allData;
+  }
   if (!allData || allData.length === 0) return { notFound: true };
 
   const ranked = getRankedMatches(species, symptoms, allData);
@@ -148,7 +157,6 @@ function translateSpecies(word) {
       break;
     }
   }
-
   const wordTranslation = foundKey ? SPECIES_LEX[foundKey] : null;
 
   return { wordTranslation };
@@ -169,9 +177,9 @@ const plantDiagnosisTool = tool({
   execute: async ({ species, symptoms }) => {
 
   let {wordTranslation: speciesEnglish}  =  await translateSpecies(species);
-  if (!speciesEnglish) speciesEnglish = species;
+  if (!speciesEnglish) speciesEnglish = await traducirTexto(species, "inglés") ;
 
-  const symptomsEnglish = await traducirTexto(symptoms);
+  const symptomsEnglish = await traducirTexto(symptoms, "inglés");
 
     console.log("[plantDiagnosisTool.func] especie traducida:", speciesEnglish);
     console.log("[plantDiagnosisTool.func] sintomas traducidos:", symptomsEnglish);
@@ -192,11 +200,11 @@ const plantDiagnosisTool = tool({
 
     const rawResponse = `**Más probable:** ${bestMatch.common_name}\n\n${descText}\n\n**Soluciones:**\n${solutionText}`;
 
-    /*
-    // Traducir al español (si la info está en inglés) --> Lo que deberia hacer vs lo q hace: traduce a ingles
-    const translated = await traducirTexto(rawResponse);
-    */
-    return ( rawResponse || '').trim();
+
+    // Traducir al español (si la info está en inglés)
+    const translated = await traducirTexto(rawResponse, "español");
+
+    return (translated || '').trim();
 
   } catch (error) {
     console.error('[plantDiagnosisTool.func] Error calling API:', error.message);
@@ -250,7 +258,9 @@ const SPECIES_LEX = {
   berenjena: "eggplant",
   espinaca: "spinach",  
   alcachofa: "artichoke", 
-  alcaucil: "artichoke"
+  alcaucil: "artichoke",
+  cereza: "cherry", 
+  cerezo: "cherry"
 
 };
 
@@ -262,6 +272,7 @@ export const elAgente = agent({
   systemPrompt,
 });
 
+/*
 export async function chatWithDiagnosis(utterance) {
   //const { species, symptoms } = extractParams(utterance);
 
@@ -275,3 +286,4 @@ export async function chatWithDiagnosis(utterance) {
     return response;
   }
 
+*/
