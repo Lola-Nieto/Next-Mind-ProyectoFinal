@@ -27,7 +27,7 @@ app.post("/api/chat", async (req, res) => {
 
   // Use only the memory as context for the agent
   try {
-    const finalAnswer = await elAgente.run(mensaje);
+    let finalAnswer = await elAgente.run(mensaje);
 
     if (typeof finalAnswer === 'object' && finalAnswer?.data?.result) {
       finalAnswer = finalAnswer.data.result;

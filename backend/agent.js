@@ -17,7 +17,7 @@ let perenualCache = null;
 const ollamaLLM = new Ollama({
   model: "mistral:7b",
   temperature: 0.3,
-  timeout: (180 * 1000),
+  timeout: (60 * 1000),
 });
 
 
@@ -28,10 +28,12 @@ Sos un asistente para diagnosticar enfermedades de plantas.
 Tu tarea es:
 - Detectar la especie (nombre común) de la planta y sus síntomas.
 - Si ambos están presentes, llamá al tool "diagnosePlantProblem" directamente.
-- No des explicaciones ni sugerencias por tu cuenta. Devolvé solo el resultado del tool.
+- Después de que el tool devuelva el resultado, **preséntalo tal cual y TERMINA la conversación**.
+- No vuelvas a llamar al mismo tool con la misma información.
+- No hagas razonamiento adicional ni busques más información después de ejecutar el tool.
 - Si el tool no devuelve resultados, informá que no se encontró una enfermedad coincidente. No inventes una respuesta.
-
 `.trim();
+
 
 
 
@@ -141,12 +143,18 @@ async function callPlantApi({ species, symptoms }) {
   ranked.forEach(element => {
     console.log('[callPlantApi] ranked element:', element.id || 'no id', '| score:', element.score);
   });
-
+  
+  const bestMatch = ranked[0];
+  const ret = {
+    description: bestMatch.description,
+    solution: bestMatch.solution,
+    name: bestMatch.common_name
+  }
   if (!ranked.length) return { notFound: true };
-  return { bestMatch: ranked[0] };
+  return { ret };
 }
 
-function translateSpecies(word) {
+async function translateSpecies(word) {
   const normalized = normalizeText(word);
   let foundKey = null;
 
@@ -176,35 +184,39 @@ const plantDiagnosisTool = tool({
   },
   execute: async ({ species, symptoms }) => {
 
-  let {wordTranslation: speciesEnglish}  =  await translateSpecies(species);
-  if (!speciesEnglish) speciesEnglish = await traducirTexto(species, "inglés") ;
+  let {wordTranslation: speciesEnglish}  = await translateSpecies(species);
+  if (!speciesEnglish) speciesEnglish = species;
 
   const symptomsEnglish = await traducirTexto(symptoms, "inglés");
 
     console.log("[plantDiagnosisTool.func] especie traducida:", speciesEnglish);
     console.log("[plantDiagnosisTool.func] sintomas traducidos:", symptomsEnglish);
   try {
-    const { bestMatch, notFound } = await callPlantApi({ species: speciesEnglish, symptoms: normalizeText(symptomsEnglish) });
-    
+    const { ret, notFound } = await callPlantApi({ species: speciesEnglish, symptoms: normalizeText(symptomsEnglish) });
+    console.log("[plantDiagnosisTool.func] bestMatch:", ret);
+
     if (notFound) {
       return "No se encontró ninguna enfermedad que coincida con tu consulta.";
     }
 
-    const descText = (bestMatch.description || [])
+    const descText = (ret.description || [])
       .map(d => `**${d.subtitle || ''}**\n${d.description || ''}`)
       .join("\n\n");
 
-    const solutionText = (bestMatch.solution || [])
+    const solutionText = (ret.solution || [])
       .map(s => `**${s.subtitle || ''}**\n${s.description || ''}`)
       .join("\n\n");
 
-    const rawResponse = `**Más probable:** ${bestMatch.common_name}\n\n${descText}\n\n**Soluciones:**\n${solutionText}`;
+    const rawResponse = `**Más probable:** ${ret.name}\n\n${descText}\n\n**Soluciones:**\n${solutionText}`;
 
 
     // Traducir al español (si la info está en inglés)
     const translated = await traducirTexto(rawResponse, "español");
 
-    return (translated || '').trim();
+   return {
+      type: "final",
+      content: translated.trim()
+    };
 
   } catch (error) {
     console.error('[plantDiagnosisTool.func] Error calling API:', error.message);
@@ -260,7 +272,9 @@ const SPECIES_LEX = {
   alcachofa: "artichoke", 
   alcaucil: "artichoke",
   cereza: "cherry", 
-  cerezo: "cherry"
+  cerezo: "cherry", 
+  brocoli: "broccoli", 
+  uva: "grape",
 
 };
 
@@ -270,6 +284,7 @@ export const elAgente = agent({
   llm: ollamaLLM,
   verbose: true,
   systemPrompt,
+  maxSteps: 2
 });
 
 /*
