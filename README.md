@@ -1,13 +1,8 @@
-
 PROBLEMAS
-
-- Traduce morrón como Morrison, marrow... a veces lo confunde con el tomate
-- No funciona la función que traduce al español la rta
-- No traduce algunas especies a inglés
+- Indentificación de la especie si no está en el diccionario/está el nombre del árbpl y no del fruto
 
 FALTA
-- Que rta no salga con formato {"data":{"result":" TEXTO  "},"displayName":"StopEvent"}
-timed out after 60 seconds
+- Que tenga una función que responda específicamente a la pregunta definitoria entre dos especies --> usar info de msj anteriores en la conversación 
 
 # Next-Mind Proyecto Final
 
