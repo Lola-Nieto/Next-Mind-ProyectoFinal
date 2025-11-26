@@ -1,8 +1,9 @@
 PROBLEMAS
-- Indentificación de la especie si no está en el diccionario/está el nombre del árbpl y no del fruto
+- Indentificación de la especie si no está en el diccionario/está el nombre del árbol y no del fruto. 
 
 FALTA
 - Que tenga una función que responda específicamente a la pregunta definitoria entre dos especies --> usar info de msj anteriores en la conversación 
+- Desarrollar que encuentre similitudes a pesar de no tener las mismas palabras, sino q compartan la idea (sist actual se basa en coincidencias) - tener en cuenta q usuario va a escribir de manera muy coloquial y la API está con lenguaje técnico y nombres científicos
 
 # Next-Mind Proyecto Final
 

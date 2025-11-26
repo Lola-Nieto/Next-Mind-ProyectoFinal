@@ -54,6 +54,13 @@ const SPECIES_LEX = {
   ciruela: "plum",
   repollo: "cabbage",
   repollitos: "brussels sprouts",  
+  limonero: "lemon",
+  naranjo: "orange",
+  manzano: "apple",
+  peral: "pear",
+  duraznero: "peach",
+  parra: "grape", 
+  
 };
 
 
